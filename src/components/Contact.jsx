@@ -1,164 +1,138 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Linkedin, Mail, Spotify, Terminal, Send } from 'lucide-react';
+import { Send, Waves } from 'lucide-react';
 
-function useSynth() {
-  const ctxRef = useRef(null);
+export default function Contact() {
+  const [playing, setPlaying] = useState(false);
+  const audioCtxRef = useRef(null);
   const oscRef = useRef(null);
-  const [active, setActive] = useState(false);
+  const gainRef = useRef(null);
 
-  const start = async () => {
-    if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = ctxRef.current;
-    if (!oscRef.current) {
+  useEffect(() => {
+    return () => {
+      if (oscRef.current) oscRef.current.stop();
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, []);
+
+  const toggleAudio = async () => {
+    if (!audioCtxRef.current) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(432, ctx.currentTime);
-      gain.gain.value = 0.0001;
+      osc.frequency.value = 432; // ambient 432Hz tone
+      gain.gain.value = 0.03; // subtle
       osc.connect(gain).connect(ctx.destination);
       osc.start();
-      oscRef.current = { osc, gain };
+      audioCtxRef.current = ctx;
+      oscRef.current = osc;
+      gainRef.current = gain;
+      setPlaying(true);
+    } else {
+      if (playing) {
+        gainRef.current.gain.exponentialRampToValueAtTime(0.0001, audioCtxRef.current.currentTime + 0.4);
+        setTimeout(() => {
+          oscRef.current.stop();
+          audioCtxRef.current.close();
+          audioCtxRef.current = null;
+          oscRef.current = null;
+          gainRef.current = null;
+          setPlaying(false);
+        }, 420);
+      } else {
+        // recreate after stop
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 432;
+        gain.gain.value = 0.03;
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        audioCtxRef.current = ctx;
+        oscRef.current = osc;
+        gainRef.current = gain;
+        setPlaying(true);
+      }
     }
-    // fade in
-    const g = oscRef.current.gain;
-    g.cancelScheduledValues(ctx.currentTime);
-    g.linearRampToValueAtTime(0.02, ctx.currentTime + 0.4);
-    setActive(true);
   };
-
-  const stop = () => {
-    const ctx = ctxRef.current;
-    if (!ctx || !oscRef.current) return;
-    const g = oscRef.current.gain;
-    g.cancelScheduledValues(ctx.currentTime);
-    g.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-    setActive(false);
-  };
-
-  useEffect(() => () => {
-    if (oscRef.current) {
-      oscRef.current.osc.stop();
-      oscRef.current.osc.disconnect();
-    }
-    if (ctxRef.current) ctxRef.current.close();
-  }, []);
-
-  return { active, start, stop };
-}
-
-export default function Contact() {
-  const { active, start, stop } = useSynth();
 
   const onSubmit = (e) => {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const name = form.get('name');
-    const email = form.get('email');
-    const message = form.get('message');
-    const body = encodeURIComponent(`Hi, this is ${name} (${email}).%0D%0A%0D%0A${message}`);
-    window.location.href = `mailto:you@example.com?subject=Portfolio%20Contact&body=${body}`;
+    const data = new FormData(e.currentTarget);
+    const name = data.get('name');
+    const email = data.get('email');
+    const message = data.get('message');
+    const subject = encodeURIComponent(`Portfolio message from ${name}`);
+    const body = encodeURIComponent(`${message}\n\nFrom: ${name} <${email}>`);
+    window.location.href = `mailto:you@example.com?subject=${subject}&body=${body}`;
   };
 
   return (
-    <section id="contact" className="relative mx-auto max-w-6xl px-6 py-16">
-      <div className="absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_center,rgba(255,215,128,0.06),transparent_50%)]" />
-
-      <div className="mb-8 flex items-center gap-2">
-        <Terminal className="h-6 w-6 text-teal-300" />
-        <h2 className="text-3xl font-bold text-white md:text-4xl">Contact</h2>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <motion.form
-          onSubmit={onSubmit}
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="rounded-2xl border border-white/10 bg-black/50 p-6 text-white shadow-[0_0_24px_rgba(255,255,255,0.06)] backdrop-blur"
-        >
-          <div className="mb-4 font-mono text-sm text-emerald-300/90">$ echo "namaste"</div>
-          <label className="mb-3 block">
-            <span className="mb-1 block text-sm text-white/70">Name</span>
-            <input
-              name="name"
-              required
-              className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 outline-none ring-amber-400/40 focus:border-amber-300/50 focus:ring"
-              placeholder="Your name"
-            />
-          </label>
-          <label className="mb-3 block">
-            <span className="mb-1 block text-sm text-white/70">Email</span>
-            <input
-              type="email"
-              name="email"
-              required
-              className="w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 outline-none ring-teal-400/40 focus:border-teal-300/50 focus:ring"
-              placeholder="you@domain.com"
-            />
-          </label>
-          <label className="mb-4 block">
-            <span className="mb-1 block text-sm text-white/70">Message</span>
-            <textarea
-              name="message"
-              rows={4}
-              required
-              className="w-full resize-none rounded-md border border-white/10 bg-black/60 px-3 py-2 outline-none ring-purple-400/40 focus:border-purple-300/50 focus:ring"
-              placeholder="Tell me about your idea…"
-            />
-          </label>
+    <section id="contact" className="w-full bg-[#0a0a0b] py-20 text-white">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold sm:text-4xl">Contact</h2>
           <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-md border border-amber-400/40 bg-black/60 px-4 py-2 text-amber-100 transition hover:border-amber-300 hover:text-amber-50"
+            onClick={toggleAudio}
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${playing ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200' : 'border-zinc-600/40 bg-zinc-800/60 text-zinc-200 hover:bg-zinc-800'}`}
+            aria-pressed={playing}
           >
-            <Send className="h-4 w-4" /> Send
+            <Waves size={16} /> {playing ? 'Pause Ambient' : 'Play Ambient'}
           </button>
-        </motion.form>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col justify-between gap-6"
-        >
-          <div className="rounded-2xl border border-white/10 bg-black/50 p-6 text-white backdrop-blur">
-            <h3 className="text-xl font-semibold">Social</h3>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <a href="https://github.com/" target="_blank" className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
-                <Github className="h-4 w-4 text-white/70" /> GitHub
-              </a>
-              <a href="https://www.linkedin.com/" target="_blank" className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
-                <Linkedin className="h-4 w-4 text-white/70" /> LinkedIn
-              </a>
-              <a href="mailto:you@example.com" className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
-                <Mail className="h-4 w-4 text-white/70" /> Email
-              </a>
-              <a href="https://open.spotify.com/" target="_blank" className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
-                <Spotify className="h-4 w-4 text-white/70" /> Spotify
-              </a>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/50 p-6 text-white backdrop-blur">
-            <h3 className="text-xl font-semibold">Ambient</h3>
-            <p className="mt-1 text-sm text-white/70">Subtle 432Hz drone for a meditative cyber vibe.</p>
-            <div className="mt-4 inline-flex items-center gap-3">
-              <button
-                onClick={active ? stop : start}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  active
-                    ? 'border-teal-400/50 bg-black/60 text-teal-100 hover:border-teal-300'
-                    : 'border-white/10 bg-black/60 text-white/80 hover:border-white/30 hover:text-white'
-                }`}
-              >
-                {active ? 'Pause' : 'Play'} Ambient
+        <div className="mt-8 grid gap-8 md:grid-cols-2">
+          <motion.form
+            onSubmit={onSubmit}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="rounded-xl border border-white/10 bg-zinc-900/60 p-5 backdrop-blur"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm text-zinc-300">Name</label>
+                <input name="name" required className="w-full rounded-md border border-white/10 bg-zinc-950/70 px-3 py-2 text-zinc-100 outline-none ring-0 placeholder:text-zinc-500 focus:border-cyan-400/50" placeholder="Your name" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-zinc-300">Email</label>
+                <input name="email" type="email" required className="w-full rounded-md border border-white/10 bg-zinc-950/70 px-3 py-2 text-zinc-100 outline-none focus:border-cyan-400/50" placeholder="you@domain.com" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-zinc-300">Message</label>
+                <textarea name="message" rows="5" required className="w-full rounded-md border border-white/10 bg-zinc-950/70 px-3 py-2 text-zinc-100 outline-none focus:border-cyan-400/50" placeholder="Say hello" />
+              </div>
+              <button type="submit" className="inline-flex items-center gap-2 rounded-md border border-fuchsia-400/40 bg-fuchsia-400/10 px-4 py-2 text-fuchsia-200 hover:bg-fuchsia-400/20">
+                <Send size={16} /> Send
               </button>
-              <span className="text-xs text-white/50">Best experienced with headphones</span>
             </div>
-          </div>
-        </motion.div>
+          </motion.form>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="rounded-xl border border-white/10 bg-gradient-to-br from-cyan-500/10 via-fuchsia-500/10 to-orange-500/10 p-5"
+          >
+            <h3 className="text-xl font-semibold">Social</h3>
+            <p className="mt-2 text-zinc-300">Connect with me across the web.</p>
+            <ul className="mt-4 space-y-2 text-zinc-200">
+              <li>
+                <a className="hover:text-cyan-300" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+              </li>
+              <li>
+                <a className="hover:text-cyan-300" href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
+              </li>
+              <li>
+                <a className="hover:text-cyan-300" href="https://x.com/" target="_blank" rel="noreferrer">Twitter</a>
+              </li>
+            </ul>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

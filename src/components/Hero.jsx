@@ -1,144 +1,107 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ArrowRight, Shield, Music } from 'lucide-react';
 import Spline from '@splinetool/react-spline';
-import { Music, Shield, ArrowRight } from 'lucide-react';
 
-const roles = [
-  'Cybersecurity Enthusiast',
-  'Musician & Composer',
-  'Indian Retro-Modern Creator',
-];
+const roles = ['Cybersecurity Engineer', 'Music Producer', 'Open Source Builder'];
 
 export default function Hero() {
   const [index, setIndex] = useState(0);
-  const [subIndex, setSubIndex] = useState(0);
-  const [blink, setBlink] = useState(true);
-  const [reverse, setReverse] = useState(false);
-  const intervalRef = useRef(null);
+  const [display, setDisplay] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [speed, setSpeed] = useState(80);
+  const mounted = useRef(true);
 
-  // Typewriter effect
-  useEffect(() => {
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setSubIndex((prev) => prev + (reverse ? -1 : 1));
-    }, 60);
-    return () => clearInterval(intervalRef.current);
-  }, [index, reverse]);
+  const current = useMemo(() => roles[index % roles.length], [index]);
 
   useEffect(() => {
-    if (!reverse && subIndex === roles[index].length + 4) {
-      setReverse(true);
-      return;
-    }
-    if (reverse && subIndex === 0) {
-      setReverse(false);
-      setIndex((prev) => (prev + 1) % roles.length);
-      return;
-    }
-  }, [subIndex, reverse, index]);
-
-  useEffect(() => {
-    const blinkInterval = setInterval(() => setBlink((v) => !v), 500);
-    return () => clearInterval(blinkInterval);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
-  const gradientMask = useMemo(
-    () => (
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80" />
-    ),
-    []
-  );
+  useEffect(() => {
+    const tick = () => {
+      if (!mounted.current) return;
+      if (!deleting) {
+        setDisplay(current.slice(0, display.length + 1));
+        setSpeed(80);
+        if (display.length + 1 === current.length) {
+          setTimeout(() => setDeleting(true), 900);
+        }
+      } else {
+        setDisplay(current.slice(0, display.length - 1));
+        setSpeed(40);
+        if (display.length === 0) {
+          setDeleting(false);
+          setIndex((i) => (i + 1) % roles.length);
+        }
+      }
+    };
+
+    const t = setTimeout(tick, speed);
+    return () => clearTimeout(t);
+  }, [display, deleting, speed, current]);
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <section className="relative h-[90vh] w-full overflow-hidden rounded-b-3xl border-b border-white/10">
-      {/* Spline background */}
+    <section className="relative h-[90vh] w-full overflow-hidden bg-[#0a0a0b]">
+      {/* 3D Spline background */}
       <div className="absolute inset-0">
-        <Spline
-          scene="https://prod.spline.design/7m4PRZ7kg6K1jPfF/scene.splinecode"
-          style={{ width: '100%', height: '100%' }}
-        />
+        <Spline scene="https://prod.spline.design/7q1X9b7bG8JrC7mK/scene.splinecode" style={{ width: '100%', height: '100%' }} />
       </div>
 
-      {gradientMask}
+      {/* Subtle gradient and grid overlay (non-interactive) */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.15),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(249,115,22,0.12),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:40px_40px]" />
 
-      {/* Content */}
-      <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col items-start justify-center px-6">
+      <div className="relative mx-auto flex h-full max-w-6xl items-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-black/40 px-3 py-1 text-xs text-teal-300 backdrop-blur-md"
+          className="max-w-2xl text-white"
         >
-          <Shield className="h-4 w-4 text-teal-300" />
-          <span>Cyber × Music × India</span>
-        </motion.div>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-cyan-300">
+            <Shield size={16} />
+            <span className="text-xs">Security x Music x India</span>
+          </div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.8 }}
-          className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-6xl"
-        >
-          Securing the Digital World.
-          <br />
-          <span className="bg-gradient-to-r from-teal-300 via-orange-400 to-purple-400 bg-clip-text text-transparent">
-            Composing its Rhythm.
-          </span>
-        </motion.h1>
+          <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
+            Cyberpunk Raga
+            <span className="block bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-orange-300 bg-clip-text text-transparent">
+              Ancient-futuristic craft
+            </span>
+          </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="mt-4 max-w-2xl text-base text-white/80 sm:text-lg"
-        >
-          A retro-modern fusion of cybersecurity precision and musical soul —
-          inspired by the colors, craft, and rhythm of India.
-        </motion.p>
+          <p className="mt-4 text-lg text-zinc-300 sm:text-xl">
+            <span className="text-zinc-400">I am a</span>
+            <span className="ml-2 font-mono text-cyan-300">{display}</span>
+            <span className="ml-1 text-cyan-500">▌</span>
+          </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.8 }}
-          className="mt-6 flex flex-wrap items-center gap-3"
-        >
-          <a
-            href="#projects"
-            className="group inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-black/50 px-5 py-2 text-teal-200 shadow-[0_0_20px_rgba(45,212,191,0.15)] transition hover:border-teal-300 hover:text-teal-100"
-          >
-            Explore Portfolio
-            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-          </a>
-          <a
-            href="#music"
-            className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-black/50 px-5 py-2 text-orange-200 shadow-[0_0_20px_rgba(251,146,60,0.12)] transition hover:border-orange-300 hover:text-orange-100"
-          >
-            <Music className="h-4 w-4" /> Listen
-          </a>
-          <a
-            href="#contact"
-            className="inline-flex items-center gap-2 rounded-full border border-purple-400/40 bg-black/50 px-5 py-2 text-purple-200 shadow-[0_0_20px_rgba(192,132,252,0.12)] transition hover:border-purple-300 hover:text-purple-100"
-          >
-            Get in Touch
-          </a>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.6 }}
-          className="mt-8 rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-sm text-white/80 backdrop-blur-md"
-        >
-          <span className="text-white/60">I am </span>
-          <span className="text-teal-300">
-            {roles[index].substring(0, Math.min(subIndex, roles[index].length))}
-          </span>
-          <span className={`${blink ? 'opacity-100' : 'opacity-0'} ml-1`}>▌</span>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              onClick={() => scrollTo('projects')}
+              className="group inline-flex items-center gap-2 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-cyan-200 transition hover:bg-cyan-500/20"
+            >
+              Explore Portfolio
+              <ArrowRight size={18} className="transition group-hover:translate-x-0.5" />
+            </button>
+            <button
+              onClick={() => scrollTo('contact')}
+              className="inline-flex items-center gap-2 rounded-md border border-orange-500/40 bg-orange-500/10 px-4 py-2 text-orange-200 transition hover:bg-orange-500/20"
+            >
+              <Music size={18} /> Listen
+            </button>
+          </div>
         </motion.div>
       </div>
-
-      {/* Indian fusion subtle glow */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-orange-500/10 via-amber-400/5 to-transparent blur-2xl" />
     </section>
   );
 }
