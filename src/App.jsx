@@ -1,28 +1,55 @@
-import { useState } from 'react'
+import Hero from './components/Hero';
+import About from './components/About';
+import Projects from './components/Projects';
+import Contact from './components/Contact';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
+    <div className="min-h-screen bg-[#0b0b0f] text-white">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <a href="#" className="inline-flex items-center gap-2">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-teal-400 shadow-[0_0_20px_rgba(45,212,191,0.7)]" />
+            <span className="bg-gradient-to-r from-teal-300 via-orange-300 to-purple-300 bg-clip-text text-sm font-bold tracking-wide text-transparent">
+              Cyber × Music × India
+            </span>
+          </a>
+          <nav className="hidden gap-5 text-sm text-white/70 sm:flex">
+            <a href="#about" className="hover:text-white">About</a>
+            <a href="#projects" className="hover:text-white">Projects</a>
+            <a href="#contact" className="hover:text-white">Contact</a>
+          </nav>
         </div>
-      </div>
-    </div>
-  )
-}
+      </header>
 
-export default App
+      <main>
+        <Hero />
+        <About />
+        <Projects />
+        <Contact />
+      </main>
+
+      <footer className="border-t border-white/10 bg-black/60">
+        <div className="mx-auto max-w-6xl px-6 py-8 text-center text-sm text-white/60">
+          <div className="mb-2 text-amber-200/80">Crafted in India | Secured by Passion</div>
+          <div>
+            <span className="font-mono text-xs text-white/50">Type</span>{' '}
+            <kbd className="rounded-sm border border-white/20 bg-black/50 px-1.5 py-0.5 text-xs">namaste</kbd>{' '}
+            <span className="font-mono text-xs text-white/50">in the console for a greeting</span>
+          </div>
+        </div>
+      </footer>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function(){
+              const msg = '\\n\\nनमस्ते — Knowledge is Supreme Power (ज्ञानं परमं बलं)\\n\\n';
+              console.log('%c' + msg, 'color:#a3e635;font-weight:bold');
+            })();
+          `,
+        }}
+      />
+    </div>
+  );
+}
